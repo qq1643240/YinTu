@@ -2,18 +2,23 @@ import SwiftUI
 
 struct EditorView: View {
     let document: RedactDocument
+    /// 照片编辑扩展内嵌模式：系统 Photos 已提供完成/取消，隐藏自带顶栏
+    var chromeless = false
     @StateObject private var viewModel: EditorViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var showExport = false
 
-    init(document: RedactDocument) {
+    init(document: RedactDocument, chromeless: Bool = false) {
         self.document = document
+        self.chromeless = chromeless
         _viewModel = StateObject(wrappedValue: EditorViewModel(document: document))
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            topBar
+            if !chromeless {
+                topBar
+            }
             canvas
             ToolPanel(viewModel: viewModel)
         }

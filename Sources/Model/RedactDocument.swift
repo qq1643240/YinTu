@@ -18,10 +18,14 @@ final class RedactDocument: ObservableObject, Identifiable {
     private var history: [[MaskBlock]] = [[]]
     private var historyIndex = 0
 
-    init(image: UIImage, fileURL: URL? = nil, libraryAssetID: String? = nil) {
+    init(image: UIImage, fileURL: URL? = nil, libraryAssetID: String? = nil, initialBlocks: [MaskBlock] = []) {
         self.source = ImageCoder.normalized(image)
         self.fileURL = fileURL
         self.libraryAssetID = libraryAssetID
+        if !initialBlocks.isEmpty {
+            blocks = initialBlocks
+            history = [initialBlocks]
+        }
     }
 
     var imageSize: CGSize { source.size }

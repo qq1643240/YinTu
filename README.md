@@ -12,7 +12,7 @@
 | M3 | 检测引擎：Vision OCR/二维码/人脸 + NSDataDetector + NL 姓名，自动打码 | ✅ |
 | M4 | 长按挑词、隐藏文字、表情遮挡、装饰工具（城市灯光/墨迹/噪点/彩虹条/彩虹格）、水印工具、刷子 | ✅ |
 | M5 | 导出完整化（JPEG/PNG + 质量滑杆、全分辨率渲染、分享并删除原图） | ✅ |
-| M6 | 照片编辑扩展 + 分享面板扩展 | ⏳ |
+| M6 | 照片编辑扩展（Photos 内直接打码，块随 adjustmentData 往返）+ 分享面板扩展（存入相册） | ✅ |
 | M7 | 设置页 / onboarding / Spotlight / 多语言 | ⏳ |
 
 ## 在 Mac 上构建
@@ -33,12 +33,15 @@ open Redacto.xcodeproj
 ```
 Sources/
   App/         RedactoApp · RootView（导入入口）
-  Model/       MaskBlock（块+参数） · RedactDocument（撤销/重做）
+  Model/       MaskBlock（块+参数） · RedactDocument（撤销/重做） · BlockArchive（扩展往返编码）
   Rendering/   BlockRenderer（CoreImage 管线+TextTiler 平铺） —— 预览与导出共用
   Detection/   VisionAnalyzer（单通道 OCR/条码/人脸） · PatternDetector（电话/邮箱/证件号/车牌/卡号/姓名） · DetectionService（合并+自动打码）
-  Editor/      CanvasGestureView（UIKit 手势宿主） · EditorViewModel · EditorView · ToolPanel
+  Editor/      CanvasGestureView（UIKit 手势宿主） · EditorViewModel · EditorView（chromeless 可嵌入扩展） · ToolPanel
   Export/      ExportView + EXIF 剥离
   Support/     ImageCoder · SampleImageGenerator
+Extensions/
+  PhotoEditor/ Photos 编辑扩展：主 App 编辑器整体嵌入，块列表经 PHAdjustmentData 往返
+  ActionShare/ 分享面板扩展：把分享来的图片存入相册
 ```
 
 **坐标约定**：`MaskBlock.rect` 是归一化（0…1）、左上原点、y 向下；
