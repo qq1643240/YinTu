@@ -8,7 +8,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     private var appVersion: String {
-        (Bundle.main.object(forKey: "CFBundleShortVersionString") as? String) ?? "0.1.0"
+        (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "0.1.0"
     }
 
     var body: some View {
