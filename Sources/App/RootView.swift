@@ -21,7 +21,7 @@ struct RootView: View {
                     .font(.system(size: 54))
                     .foregroundStyle(.tint)
                 VStack(spacing: 6) {
-                    Text("Redacto").font(.system(size: 38, weight: .bold))
+                    Text("隐图").font(.system(size: 38, weight: .bold))
                     Text(L("root.subtitle"))
                         .foregroundStyle(.secondary)
                 }

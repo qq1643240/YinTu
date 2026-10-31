@@ -1,7 +1,9 @@
-# Redacto — 图片隐私打码（净室重写）
+# 隐图 YinTu — 图片隐私打码（净室重写）
 
 对 DAMA 功能对标的**净室重写**：不包含原应用的任何代码、素材、文案与配置。
 全部实现基于 Apple 公开框架，零第三方依赖、零网络请求、零遥测。
+
+App 名称：**隐图**（YinTu） · Bundle ID：`com.yintu.app`（扩展 `com.yintu.app.PhotoEditor` / `com.yintu.app.Share`）
 
 ## 当前状态
 
@@ -15,24 +17,29 @@
 | M6 | 照片编辑扩展（Photos 内直接打码，块随 adjustmentData 往返）+ 分享面板扩展（存入相册） | ✅ |
 | M7 | 设置页 / 首启引导 / Spotlight 快捷指令 / 双语（en+zh-Hans，shell 层） | ✅ |
 
-## 在 Mac 上构建
+## 构建
 
 需要 Xcode 15+ 与 [XcodeGen](https://github.com/yonaskolb/XcodeGen)：
 
 ```bash
 brew install xcodegen
-cd redacto
-xcodegen          # 生成 Redacto.xcodeproj（目录已被 .gitignore 排除）
-open Redacto.xcodeproj
+xcodegen          # 生成 YinTu.xcodeproj（目录已被 .gitignore 排除）
+open YinTu.xcodeproj
 ```
 
 选一个 iOS 17+ 模拟器直接 Cmd+R。真机调试需在 Signing & Capabilities 里换成你自己的 Team。
+
+### CI 自动出包
+
+推送即触发 GitHub Actions（`.github/workflows/ios.yml`，macOS runner）：
+xcodegen → `xcodebuild` 无签名真机构建（`CODE_SIGNING_ALLOWED=NO`）→ 打包 `YinTu-unsigned.ipa` 上传为 Artifact。
+IPA 未签名，安装到真机请用 AltStore / Sideloadly / TrollStore 或 Xcode 重签。
 
 ## 架构速览
 
 ```
 Sources/
-  App/         RedactoApp · RootView（导入入口） · Intents（"打码最新的图片"快捷指令） · SettingsView · OnboardingView
+  App/         YinTuApp · RootView（导入入口） · Intents（"打码最新的图片"快捷指令） · SettingsView · OnboardingView
   Model/       MaskBlock（块+参数） · RedactDocument（撤销/重做） · BlockArchive（扩展往返编码）
   Rendering/   BlockRenderer（CoreImage 管线+TextTiler 平铺） —— 预览与导出共用
   Detection/   VisionAnalyzer（单通道 OCR/条码/人脸） · PatternDetector（电话/邮箱/证件号/车牌/卡号/姓名） · DetectionService（合并+自动打码）

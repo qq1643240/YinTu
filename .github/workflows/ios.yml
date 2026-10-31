@@ -1,0 +1,43 @@
+name: Build iOS (unsigned IPA)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen
+
+      - name: Build (unsigned, device SDK)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project YinTu.xcodeproj \
+            -target YinTu \
+            -configuration Release \
+            -sdk iphoneos \
+            SYMROOT=build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            | xcbeautify --quiet
+
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Release-iphoneos/YinTu.app Payload/
+          zip -qry YinTu-unsigned.ipa Payload
+          ls -lh YinTu-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YinTu-unsigned-ipa
+          path: YinTu-unsigned.ipa

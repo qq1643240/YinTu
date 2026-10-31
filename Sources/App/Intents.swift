@@ -8,7 +8,7 @@ struct RedactLatestPhotoIntent: AppIntent {
     static let pendingAssetKey = "pending_redact_asset"
 
     static var title: LocalizedStringResource = "打码最新的图片"
-    static var description = IntentDescription("打开 Redacto 并载入相册中最新的一张照片")
+    static var description = IntentDescription("打开隐图并载入相册中最新的一张照片")
     static var openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {
@@ -26,7 +26,7 @@ struct RedactLatestPhotoIntent: AppIntent {
     }
 }
 
-struct RedactoShortcuts: AppShortcutsProvider {
+struct YinTuShortcuts: AppShortcutsProvider {
     @AppShortcutsBuilder
     static var appShortcuts: [AppShortcut] {
         AppShortcut(

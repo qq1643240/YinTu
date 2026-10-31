@@ -170,7 +170,7 @@ struct ExportView: View {
             return
         }
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("redacto-\(Int(Date().timeIntervalSince1970)).\(format.fileExtension)")
+            .appendingPathComponent("yintu-\(Int(Date().timeIntervalSince1970)).\(format.fileExtension)")
         do {
             try data.write(to: url)
             shareURL = url

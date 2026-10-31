@@ -3,7 +3,7 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
-/// 分享面板扩展：接收图片，存入相册，再由用户从 Redacto 里打码。
+/// 分享面板扩展：接收图片，存入相册，再由用户从隐图里打码。
 /// 全程离线，无网络，无第三方依赖。
 final class ShareViewController: UIViewController {
     private let statusLabel = UILabel()
@@ -74,7 +74,7 @@ final class ShareViewController: UIViewController {
 
         spinner.stopAnimating()
         if savedCount > 0 {
-            statusLabel.text = "已保存 \(savedCount) 张到相册，回 Redacto 打码吧"
+            statusLabel.text = "已保存 \(savedCount) 张到相册，回隐图打码吧"
         } else {
             statusLabel.text = "保存失败（相册权限被拒绝）"
         }

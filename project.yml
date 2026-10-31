@@ -1,6 +1,6 @@
-name: Redacto
+name: YinTu
 options:
-  bundleIdPrefix: com.redacto
+  bundleIdPrefix: com.yintu
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -11,25 +11,25 @@ settings:
     DEVELOPMENT_TEAM: ""
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 targets:
-  Redacto:
+  YinTu:
     type: application
     platform: iOS
     sources:
       - path: Sources
       - path: Resources
     dependencies:
-      - target: PhotoEditorExtension
-      - target: ActionShareExtension
+      - target: YinTuPhotoEditor
+      - target: YinTuShare
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.redacto.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.yintu.app
         TARGETED_DEVICE_FAMILY: "1,2"
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: 1
     info:
       path: Support/Info.plist
       properties:
-        CFBundleDisplayName: Redacto
+        CFBundleDisplayName: 隐图
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -39,7 +39,7 @@ targets:
         NSPhotoLibraryUsageDescription: 仅在您选择「分享并删除原图」时用于删除所选照片，不会上传任何内容。
         ITSAppUsesNonExemptEncryption: false
 
-  PhotoEditorExtension:
+  YinTuPhotoEditor:
     type: app-extension
     platform: iOS
     sources:
@@ -51,26 +51,26 @@ targets:
           - "Export/**"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.redacto.app.PhotoEditor
+        PRODUCT_BUNDLE_IDENTIFIER: com.yintu.app.PhotoEditor
         TARGETED_DEVICE_FAMILY: "1,2"
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: 1
     info:
       path: Extensions/PhotoEditor/Support/Info.plist
       properties:
-        CFBundleDisplayName: Redacto 打码
+        CFBundleDisplayName: 隐图打码
         NSExtension:
           NSExtensionPointIdentifier: com.apple.photo-editing
           NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).PhotoEditorViewController"
 
-  ActionShareExtension:
+  YinTuShare:
     type: app-extension
     platform: iOS
     sources:
       - path: Extensions/ActionShare
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.redacto.app.Share
+        PRODUCT_BUNDLE_IDENTIFIER: com.yintu.app.Share
         TARGETED_DEVICE_FAMILY: "1,2"
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: 1
@@ -78,7 +78,7 @@ targets:
       path: Extensions/ActionShare/Support/Info.plist
       properties:
         CFBundleDisplayName: 存入相册待打码
-        NSPhotoLibraryAddUsageDescription: 把分享来的图片存入相册，方便到 Redacto 中打码。
+        NSPhotoLibraryAddUsageDescription: 把分享来的图片存入相册，方便到隐图中打码。
         NSExtension:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).ShareViewController"

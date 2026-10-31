@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct RedactoApp: App {
+struct YinTuApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()

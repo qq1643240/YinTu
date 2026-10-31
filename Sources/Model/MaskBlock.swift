@@ -20,7 +20,7 @@ struct MaskBlock: Identifiable, Codable, Equatable {
     /// 表情遮挡使用的 emoji
     var emoji: String = "😎"
     /// 水印参数
-    var watermarkText: String = "Redacto"
+    var watermarkText: String = "隐图"
     /// 水印字号（图像宽度的比例）
     var watermarkSize: Double = 0.05
     /// 水印角度（度）

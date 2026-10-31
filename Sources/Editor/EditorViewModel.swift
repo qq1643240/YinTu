@@ -27,7 +27,7 @@ final class EditorViewModel: ObservableObject {
 
     // 表情 / 水印的"下次创建"默认值
     @Published var emoji: String = "😎"
-    @Published var watermarkText: String = "Redacto"
+    @Published var watermarkText: String = "隐图"
     @Published var watermarkSize: Double = 0.05
     @Published var watermarkAngle: Double = -30
     @Published var watermarkLineSpacing: Double = 2.0
