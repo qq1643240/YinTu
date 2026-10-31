@@ -2,6 +2,9 @@ name: probe
 on: workflow_dispatch
 jobs:
   t:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [macos-13, macos-14, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - run: echo ok
