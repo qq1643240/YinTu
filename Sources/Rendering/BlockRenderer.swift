@@ -108,10 +108,9 @@ enum BlockRenderer {
             let gridSize = Float(max(block.pixelSize * imageWidth, 3))
             let checker = CIFilter.checkerboardGenerator()
             checker.width = gridSize
-            checker.height = gridSize
             checker.sharpness = 1
             checker.color1 = CIColor(red: 1, green: 0.3, blue: 0.6)
-            checker.color2 = CIColor(red: 0.3, green: 0.8, blue: 1)
+            checker.color0 = CIColor(red: 0.3, green: 0.8, blue: 1)
             return (checker.outputImage ?? CIImage.empty()).cropped(to: extent)
 
         case .emoji:
@@ -134,16 +133,11 @@ enum BlockRenderer {
     private static func maskImage(rect: CGRect, cornerRadius: Double, extent: CGRect) -> CIImage {
         let black = CIImage(color: CIColor.black).cropped(to: extent)
         let generator = CIFilter.roundedRectangleGenerator()
-        generator.width = Float(rect.width)
-        generator.height = Float(rect.height)
-        generator.radius = Float(min(rect.width, rect.height) * 2 * cornerRadius)
+        generator.rectangle = CIVector(cgRect: rect)
+        generator.cornerRadius = Float(min(rect.width, rect.height) * 2 * cornerRadius)
         generator.color = CIColor.white
         guard let white = generator.outputImage else { return black }
-        let centered = white.transformed(by: CGAffineTransform(
-            translationX: rect.midX,
-            y: rect.midY
-        ))
-        return centered.composited(over: black)
+        return white.composited(over: black)
     }
 
     // MARK: - 彩虹渐变（256×1 横向七色，按需缩放）
@@ -167,10 +161,11 @@ enum BlockRenderer {
                 colors: colors,
                 locations: nil
             ) else { return }
-            ctx.cgContext.draw(
+            ctx.cgContext.drawLinearGradient(
                 gradient,
                 start: CGPoint(x: 0, y: 0),
-                end: CGPoint(x: 256, y: 0)
+                end: CGPoint(x: 256, y: 0),
+                options: [.extendsStart, .extendsEnd]
             )
         }
         guard let cg = image.cgImage else { return nil }
@@ -230,9 +225,10 @@ enum TextTiler {
             .translatedBy(x: -center.x, y: -center.y)
         tiled = tiled.transformed(by: rotation).cropped(to: extent)
 
-        return tiled.applyingFilter("CIColorMatrix", parameters: [
-            kCIInputAlphaVectorKey: CIVector(x: 0, y: 0, z: 0, w: opacity),
-        ])
+        let matrix = CIFilter.colorMatrix()
+        matrix.inputImage = tiled
+        matrix.inputAVector = CIVector(x: 0, y: 0, z: 0, w: Float(opacity))
+        return matrix.outputImage
     }
 
     static func emojiTile(emoji: String, blockRect: CGRect, extent: CGRect) -> CIImage? {
