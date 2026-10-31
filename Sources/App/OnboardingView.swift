@@ -21,7 +21,7 @@ struct OnboardingView: View {
     var body: some View {
         VStack(spacing: 0) {
             TabView(selection: $page) {
-                ForEach(steps.indices, id: \.self) { index in
+                ForEach(0..<steps.count, id: \.self) { index in
                     let step = steps[index]
                     VStack(spacing: 24) {
                         Image(systemName: step.icon)
