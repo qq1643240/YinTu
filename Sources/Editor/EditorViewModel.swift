@@ -20,6 +20,7 @@ final class EditorViewModel: ObservableObject {
     @Published var zoom = CanvasZoom.identity
     @Published var preview: UIImage?
     @Published var fittedSize: CGSize = .zero
+    @Published var detecting = false
 
     var selectedBlock: MaskBlock? {
         guard let id = selectedBlockID else { return nil }
@@ -154,6 +155,29 @@ final class EditorViewModel: ObservableObject {
             width: max(-maxX, min(maxX, offset.width)),
             height: max(-maxY, min(maxY, offset.height))
         )
+    }
+
+    // MARK: - 自动打码（M3 检测引擎）
+
+    /// 检测人脸/条码/电话/邮箱/证件号/车牌/卡号/姓名并直接打码。
+    /// 预算：OCR 在 ≤2048px 降采样图上跑，归一化坐标保证全分辨率导出一致。
+    func runAutoRedact() async {
+        guard !detecting else { return }
+        detecting = true
+        defer { detecting = false }
+
+        let base = ImageCoder.downscaled(document.source, maxDimension: 2048)
+        guard let cgImage = base.cgImage else { return }
+        let analysis = await Task.detached(priority: .userInitiated) { () -> VisionAnalysis in
+            VisionAnalyzer.analyze(cgImage: cgImage)
+        }.value
+
+        let newBlocks = DetectionService.autoRedactBlocks(
+            from: analysis.sensitive,
+            existing: document.blocks
+        )
+        guard !newBlocks.isEmpty else { return }
+        document.commit(document.blocks + newBlocks)
     }
 
     // MARK: - 历史与选中块

@@ -25,7 +25,14 @@ struct EditorView: View {
         .onChange(of: document.blocks) { _ in
             viewModel.renderPreview()
         }
+        .task {
+            if autoMaskOnOpen {
+                await viewModel.runAutoRedact()
+            }
+        }
     }
+
+    @AppStorage("auto_mask_on_open") private var autoMaskOnOpen = true
 
     // MARK: - 顶栏
 
@@ -59,6 +66,13 @@ struct EditorView: View {
                     .frame(width: 44, height: 44)
             }
             .disabled(viewModel.selectedBlockID == nil)
+            Button {
+                Task { await viewModel.runAutoRedact() }
+            } label: {
+                Image(systemName: "wand.and.stars")
+                    .frame(width: 44, height: 44)
+            }
+            .disabled(viewModel.detecting)
             Button {
                 showExport = true
             } label: {
@@ -119,6 +133,18 @@ struct EditorView: View {
                         .padding(8)
                         .background(.thinMaterial, in: Capsule())
                         .padding(.bottom, 10)
+                }
+            }
+            .overlay {
+                if viewModel.detecting {
+                    VStack(spacing: 8) {
+                        ProgressView()
+                        Text("正在检测敏感信息…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(16)
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
                 }
             }
             .onAppear { viewModel.fittedSize = fit }

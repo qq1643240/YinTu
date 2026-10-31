@@ -9,7 +9,7 @@
 |---|---|---|
 | M1 | 工程骨架、文档模型（撤销/重做）、四种导入入口（相册/文件/剪贴板/示例图） | ✅ |
 | M2 | 编辑画布（缩放/平移/框选）、色块·马赛克·模糊·马克笔、参数面板、选中/删除、导出（去 EXIF） | ✅ |
-| M3 | 检测引擎：Vision OCR/二维码/人脸 + NSDataDetector + NL 姓名，自动打码 | ⏳ |
+| M3 | 检测引擎：Vision OCR/二维码/人脸 + NSDataDetector + NL 姓名，自动打码 | ✅ |
 | M4 | 长按挑词、隐藏文字、表情遮挡、装饰工具、水印工具 | ⏳ |
 | M5 | 导出完整化（格式/原尺寸/分享并删除原图） | 🚧 基础版已含 |
 | M6 | 照片编辑扩展 + 分享面板扩展 | ⏳ |
@@ -35,7 +35,7 @@ Sources/
   App/         RedactoApp · RootView（导入入口）
   Model/       MaskBlock（块+参数） · RedactDocument（撤销/重做）
   Rendering/   BlockRenderer —— CoreImage 管线，预览与导出共用
-  Detection/   Detector 协议（M3 落地实现）
+  Detection/   VisionAnalyzer（单通道 OCR/条码/人脸） · PatternDetector（电话/邮箱/证件号/车牌/卡号/姓名） · DetectionService（合并+自动打码）
   Editor/      CanvasGestureView（UIKit 手势宿主） · EditorViewModel · EditorView · ToolPanel
   Export/      ExportView + EXIF 剥离
   Support/     ImageCoder · SampleImageGenerator
