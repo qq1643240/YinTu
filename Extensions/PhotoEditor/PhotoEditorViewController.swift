@@ -23,12 +23,14 @@ final class PhotoEditorViewController: UIViewController, PHContentEditingControl
         BlockArchive.isOurs(adjustmentData)
     }
 
+    var shouldShowCancelConfirmation: Bool { true }
+
     func startContentEditing(with contentEditingInput: PHContentEditingInput, placeholderImage: UIImage) {
         self.contentEditingInput = contentEditingInput
 
         let restored: [MaskBlock]
         if let adjustment = contentEditingInput.adjustmentData, BlockArchive.isOurs(adjustment),
-           let data = adjustment.data, let decoded = BlockArchive.decode(data) {
+           let decoded = BlockArchive.decode(adjustment.data) {
             restored = decoded
         } else {
             restored = []
@@ -53,20 +55,20 @@ final class PhotoEditorViewController: UIViewController, PHContentEditingControl
         hostingController = host
     }
 
-    func finishContentEditing(completionHandler: @escaping (PHContentEditingOutput?, Error?) -> Void) {
+    func finishContentEditing(completionHandler: @escaping (PHContentEditingOutput?) -> Void) {
         guard let input = contentEditingInput, let document = document else {
-            completionHandler(nil, nil)
+            completionHandler(nil)
             return
         }
         let blocks = document.blocks
         pendingRender = Task { [weak self] in
             guard let self else {
-                completionHandler(nil, nil)
+                completionHandler(nil)
                 return
             }
             let output = await self.renderOutput(input: input, blocks: blocks)
             self.pendingRender = nil
-            completionHandler(output, nil)
+            completionHandler(output)
         }
     }
 
@@ -82,10 +84,11 @@ final class PhotoEditorViewController: UIViewController, PHContentEditingControl
 
     private func renderOutput(input: PHContentEditingInput, blocks: [MaskBlock]) async -> PHContentEditingOutput? {
         guard let fullURL = input.fullSizeImageURL,
-              let original = ImageCoder.normalized(UIImage(contentsOfFile: fullURL.path)),
-              let output = PHContentEditingOutput(contentEditingInput: input) else {
+              let raw = UIImage(contentsOfFile: fullURL.path) else {
             return nil
         }
+        let original = ImageCoder.normalized(raw)
+        let output = PHContentEditingOutput(contentEditingInput: input)
         let rendered = await Task.detached(priority: .userInitiated) { () -> Data? in
             guard let image = BlockRenderer.render(base: original, blocks: blocks) else { return nil }
             return ImageCoder.jpegData(image)
