@@ -56,7 +56,7 @@ struct PatternDetector {
         let fullRange = NSRange(location: 0, length: nsText.length)
 
         // NSDataDetector：电话与邮箱（邮箱以 link 形式给出）
-        if let detector = try? NSDataDetector(types: NSTextCheckingType.phoneNumber.rawValue | NSTextCheckingType.link.rawValue) {
+        if let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.phoneNumber.rawValue | NSTextCheckingResult.CheckingType.link.rawValue) {
             for check in detector.matches(in: text, range: fullRange) {
                 switch check.resultType {
                 case .phoneNumber:
@@ -98,13 +98,13 @@ struct PatternDetector {
         let tagger = NLTagger(tagSchemes: [.nameType])
         tagger.string = text
         tagger.enumerateTags(
-            in: fullRange,
+            in: text.startIndex..<text.endIndex,
             unit: .word,
             scheme: .nameType,
             options: [.omitWhitespace, .omitPunctuation, .joinNames]
         ) { tag, range in
             if tag == .personalName {
-                results.append((range, .personName))
+                results.append((NSRange(range, in: text), .personName))
             }
             return true
         }
