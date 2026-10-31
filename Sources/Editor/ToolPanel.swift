@@ -27,86 +27,173 @@ struct ToolPanel: View {
         RGBA(red: 1, green: 0.85, blue: 0.1, alpha: 1),
     ]
 
+    /// 十二工具按用途分两排，宽度才放得下
+    private let toolRows: [[ToolKind]] = [
+        [.colorBlock, .pixelate, .blur, .marker, .brush, .hideText],
+        [.emoji, .watermark, .cityLights, .inkStroke, .noisyColorBlock, .rainbowBelt, .rainbowGrid],
+    ]
+
     var body: some View {
-        VStack(spacing: 12) {
-            toolRow
+        VStack(spacing: 10) {
+            ForEach(toolRows.indices, id: \.self) { rowIndex in
+                HStack(spacing: 8) {
+                    ForEach(toolRows[rowIndex], id: \.self) { tool in
+                        toolButton(tool)
+                    }
+                }
+            }
             parameterRow
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 14)
         .padding(.top, 10)
         .padding(.bottom, 24)
         .background(Color(.secondarySystemBackground))
     }
 
-    // MARK: - 工具行
+    // MARK: - 工具按钮
 
-    private var toolRow: some View {
-        HStack(spacing: 10) {
-            ForEach(ToolKind.allCases) { tool in
-                Button {
-                    viewModel.selectTool(tool)
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: tool.symbolName)
-                            .font(.system(size: 18, weight: .medium))
-                            .frame(height: 22)
-                        Text(tool.title)
-                            .font(.caption2)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(viewModel.activeTool == tool ? Color.accentColor.opacity(0.16) : .clear)
-                    )
-                    .foregroundStyle(viewModel.activeTool == tool ? Color.accentColor : .primary)
-                }
-                .buttonStyle(.plain)
+    private func toolButton(_ tool: ToolKind) -> some View {
+        Button {
+            viewModel.selectTool(tool)
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: tool.symbolName)
+                    .font(.system(size: 17, weight: .medium))
+                    .frame(height: 20)
+                Text(tool.title)
+                    .font(.system(size: 10))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 9)
+                    .fill(viewModel.activeTool == tool ? Color.accentColor.opacity(0.16) : .clear)
+            )
+            .foregroundStyle(viewModel.activeTool == tool ? Color.accentColor : .primary)
         }
+        .buttonStyle(.plain)
     }
 
-    // MARK: - 参数行
+    // MARK: - 参数行（按当前工具切换）
 
     @ViewBuilder
     private var parameterRow: some View {
         switch viewModel.activeTool {
-        case .colorBlock, .marker:
+        case .colorBlock, .marker, .inkStroke:
             HStack(spacing: 10) {
-                ForEach(0..<palette.count, id: \.self) { index in
-                    Button {
-                        viewModel.strokeColor = palette[index]
-                    } label: {
-                        Circle()
-                            .fill(palette[index].swiftUIColor)
-                            .frame(width: 26, height: 26)
-                            .overlay(
-                                Circle().strokeBorder(
-                                    viewModel.strokeColor == palette[index] ? Color.accentColor : .clear,
-                                    lineWidth: 2
-                                )
-                                .padding(-3)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-                ColorPicker("", selection: colorBinding, supportsOpacity: false)
-                    .labelsHidden()
-                    .frame(width: 30)
+                colorSwatches
                 Spacer()
                 opacitySlider
             }
-        case .pixelate:
+        case .pixelate, .noisyColorBlock, .rainbowGrid:
             HStack(spacing: 10) {
                 parameterLabel("颗粒")
                 Slider(value: pixelSizeBinding, in: 0.005...0.12)
                 cornerRadiusSlider
             }
-        case .blur:
+        case .blur, .cityLights:
             HStack(spacing: 10) {
                 parameterLabel("强度")
                 Slider(value: blurRadiusBinding, in: 0.005...0.06)
                 cornerRadiusSlider
+            }
+        case .brush:
+            HStack(spacing: 10) {
+                colorSwatches
+                Spacer()
+                parameterLabel("粗细")
+                Slider(value: pixelSizeBinding, in: 0.008...0.06)
+                    .frame(maxWidth: 120)
+            }
+        case .hideText:
+            HStack(spacing: 8) {
+                parameterLabel("吸取目标背景色，盖住文字即可")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                cornerRadiusSlider
+            }
+        case .emoji:
+            HStack(spacing: 8) {
+                parameterLabel("表情")
+                emojiPicker
+                Spacer()
+            }
+        case .watermark:
+            watermarkControls
+        case .rainbowBelt:
+            HStack(spacing: 8) {
+                parameterLabel("斜向彩虹条：拖拽框选即铺满整块")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                cornerRadiusSlider
+            }
+        }
+    }
+
+    private var colorSwatches: some View {
+        HStack(spacing: 10) {
+            ForEach(0..<palette.count, id: \.self) { index in
+                Button {
+                    viewModel.strokeColor = palette[index]
+                    viewModel.modifySelected { $0.color = palette[index] }
+                } label: {
+                    Circle()
+                        .fill(palette[index].swiftUIColor)
+                        .frame(width: 26, height: 26)
+                        .overlay(
+                            Circle().strokeBorder(
+                                viewModel.strokeColor == palette[index] ? Color.accentColor : .clear,
+                                lineWidth: 2
+                            )
+                            .padding(-3)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+            ColorPicker("", selection: colorBinding, supportsOpacity: false)
+                .labelsHidden()
+                .frame(width: 30)
+        }
+    }
+
+    /// 表情选择：一排常用 + 少量候选，点选即设
+    private var emojiPicker: some View {
+        Menu {
+            ForEach(["😎", "🥰", "🤣", "🎉", "⭐️", "🍀", "🐱", "🐶", "🌈", "🍕", "🚀", "🌙"], id: \.self) { item in
+                Button(item) {
+                    viewModel.emoji = item
+                    viewModel.modifySelected { $0.emoji = item }
+                }
+            }
+        } label: {
+            Text(viewModel.emoji)
+                .font(.title3)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+
+    private var watermarkControls: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                parameterLabel("文字")
+                TextField("水印文字", text: textBinding)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.caption)
+                Spacer()
+            }
+            HStack(spacing: 8) {
+                parameterLabel("大小")
+                Slider(value: watermarkSizeBinding, in: 0.015...0.12)
+                parameterLabel("角度")
+                Slider(value: watermarkAngleBinding, in: -90...90)
+                parameterLabel("行距")
+                Slider(value: watermarkLineSpacingBinding, in: 1...4)
             }
         }
     }
@@ -131,7 +218,7 @@ struct ToolPanel: View {
         Text(text).font(.caption).foregroundStyle(.secondary)
     }
 
-    // MARK: - 绑定（有选中块→改块，无选中→改默认笔刷）
+    // MARK: - 绑定（有选中块→改块，无选中→改下次创建的默认值）
 
     private var colorBinding: Binding<Color> {
         Binding(
@@ -176,6 +263,46 @@ struct ToolPanel: View {
             set: { newValue in
                 viewModel.cornerRadius = newValue
                 viewModel.modifySelected { $0.cornerRadius = newValue }
+            }
+        )
+    }
+
+    private var textBinding: Binding<String> {
+        Binding(
+            get: { viewModel.watermarkText },
+            set: { newValue in
+                viewModel.watermarkText = newValue
+                viewModel.modifySelected { $0.watermarkText = newValue }
+            }
+        )
+    }
+
+    private var watermarkSizeBinding: Binding<Double> {
+        Binding(
+            get: { viewModel.watermarkSize },
+            set: { newValue in
+                viewModel.watermarkSize = newValue
+                viewModel.modifySelected { $0.watermarkSize = newValue }
+            }
+        )
+    }
+
+    private var watermarkAngleBinding: Binding<Double> {
+        Binding(
+            get: { viewModel.watermarkAngle },
+            set: { newValue in
+                viewModel.watermarkAngle = newValue
+                viewModel.modifySelected { $0.watermarkAngle = newValue }
+            }
+        )
+    }
+
+    private var watermarkLineSpacingBinding: Binding<Double> {
+        Binding(
+            get: { viewModel.watermarkLineSpacing },
+            set: { newValue in
+                viewModel.watermarkLineSpacing = newValue
+                viewModel.modifySelected { $0.watermarkLineSpacing = newValue }
             }
         )
     }

@@ -5,6 +5,8 @@ import Vision
 struct VisionAnalysis {
     var sensitive: [DetectedRegion] = []
     var textLines: [DetectedRegion] = []
+    /// 词级矩形，供"长按挑词"使用
+    var textWords: [DetectedRegion] = []
 
     static let empty = VisionAnalysis()
 }
@@ -38,6 +40,7 @@ enum VisionAnalyzer {
             analysis.textLines.append(DetectedRegion(rect: rect, kind: .text, label: "文本"))
         }
         analysis.sensitive += PatternDetector().detectSensitive(in: lines)
+        analysis.textWords = wordRegions(from: textRequest.results ?? [])
 
         for observation in barcodeRequest.results ?? [] {
             guard let rect = regionFromVisionBox(observation.boundingBox) else { continue }
@@ -50,5 +53,23 @@ enum VisionAnalyzer {
         }
 
         return analysis
+    }
+
+    /// 利用 VNRecognizedText.boundingBox(for:) 拿到每个词的精确框
+    private static func wordRegions(from observations: [VNRecognizedTextObservation]) -> [DetectedRegion] {
+        var regions: [DetectedRegion] = []
+        for observation in observations {
+            guard let candidate = observation.topCandidates(1).first else { continue }
+            let text = candidate.string as NSString
+            text.enumerateSubstrings(
+                in: NSRange(location: 0, length: text.length),
+                options: [.byWords, .substringNotRequired]
+            ) { _, range, _, _ in
+                guard let box = try? candidate.boundingBox(for: range),
+                      let rect = regionFromVisionBox(box) else { return }
+                regions.append(DetectedRegion(rect: rect, kind: .text, label: "词"))
+            }
+        }
+        return regions
     }
 }

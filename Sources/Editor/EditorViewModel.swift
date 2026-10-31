@@ -21,6 +21,18 @@ final class EditorViewModel: ObservableObject {
     @Published var preview: UIImage?
     @Published var fittedSize: CGSize = .zero
     @Published var detecting = false
+    @Published var textWords: [DetectedRegion] = []
+    /// 刷子正在画的笔迹（归一化点序列）
+    @Published var strokePoints: [CGPoint] = []
+
+    // 表情 / 水印的"下次创建"默认值
+    @Published var emoji: String = "😎"
+    @Published var watermarkText: String = "Redacto"
+    @Published var watermarkSize: Double = 0.05
+    @Published var watermarkAngle: Double = -30
+    @Published var watermarkLineSpacing: Double = 2.0
+
+    private var cachedAnalysis: VisionAnalysis?
 
     var selectedBlock: MaskBlock? {
         guard let id = selectedBlockID else { return nil }
@@ -64,12 +76,29 @@ final class EditorViewModel: ObservableObject {
             pixelSize = max(pixelSize, 0.02)
         case .blur:
             blurRadius = max(blurRadius, 0.01)
+        case .brush:
+            pixelSize = max(pixelSize, 0.02)
+        case .hideText, .emoji:
+            opacity = 1
+        case .cityLights:
+            blurRadius = max(blurRadius, 0.012)
+        case .inkStroke:
+            strokeColor = .ink
+            opacity = 0.85
+        case .noisyColorBlock, .rainbowBelt, .rainbowGrid:
+            pixelSize = max(pixelSize, 0.015)
+        case .watermark:
+            opacity = 0.35
         }
     }
 
     // MARK: - 手势回调（坐标均为归一化 0…1）
 
     func drawChanged(at point: CGPoint) {
+        if activeTool == .brush {
+            strokePoints.append(point)
+            return
+        }
         if dragStart == nil { dragStart = point }
         dragRect = Self.rectBetween(dragStart ?? point, point)
     }
@@ -78,19 +107,64 @@ final class EditorViewModel: ObservableObject {
         defer {
             dragStart = nil
             dragRect = nil
+            strokePoints = []
+        }
+        if activeTool == .brush {
+            commitBrushStroke()
+            return
         }
         guard let start = dragStart else { return }
         let rect = Self.rectBetween(start, point)
         guard rect.width > 0.008, rect.height > 0.008 else { return }
+
         var block = MaskBlock(kind: activeTool, rect: rect)
         block.color = strokeColor
         block.opacity = opacity
         block.pixelSize = pixelSize
         block.blurRadius = blurRadius
         block.cornerRadius = cornerRadius
+        switch activeTool {
+        case .emoji:
+            block.emoji = emoji
+        case .hideText:
+            block.color = ImageCoder.dominantBackground(near: rect, in: document.source)
+        case .watermark:
+            block.watermarkText = watermarkText
+            block.watermarkSize = watermarkSize
+            block.watermarkAngle = watermarkAngle
+            block.watermarkLineSpacing = watermarkLineSpacing
+        default:
+            break
+        }
         var newBlocks = document.blocks
         newBlocks.append(block)
         document.commit(newBlocks)
+    }
+
+    /// 刷子笔迹 → 圆形笔触块序列（一次性提交，撤销时整笔消失）
+    private func commitBrushStroke() {
+        guard strokePoints.count > 1 else { return }
+        let dab = max(pixelSize, 0.008)
+        var dabs: [MaskBlock] = []
+        var last: CGPoint?
+        for point in strokePoints {
+            if let previous = last, Self.distance(previous, point) < dab * 0.6 { continue }
+            last = point
+            var block = MaskBlock(
+                kind: .brush,
+                rect: CGRect(x: point.x - dab / 2, y: point.y - dab / 2, width: dab, height: dab)
+            )
+            block.color = strokeColor
+            block.opacity = opacity
+            block.cornerRadius = 0.5
+            dabs.append(block)
+        }
+        guard !dabs.isEmpty else { return }
+        document.commit(document.blocks + dabs)
+    }
+
+    static func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
+        hypot(a.x - b.x, a.y - b.y)
     }
 
     static func rectBetween(_ a: CGPoint, _ b: CGPoint) -> CGRect {
@@ -106,6 +180,23 @@ final class EditorViewModel: ObservableObject {
     func drawCancelled() {
         dragStart = nil
         dragRect = nil
+        strokePoints = []
+    }
+
+    /// 长按挑词：命中某个检测词就直接打码（类似快捷截词）
+    func longPress(at point: CGPoint) {
+        let tolerance = 0.012
+        guard let word = textWords.last(where: {
+            $0.rect.insetBy(dx: -tolerance, dy: -tolerance).contains(point)
+        }) else { return }
+        let rect = word.rect.insetBy(dx: -0.004, dy: -0.006)
+        guard rect.intersection(CGRect(x: 0, y: 0, width: 1, height: 1)) == rect,
+              rect.width > 0.001, rect.height > 0.001 else { return }
+        var block = MaskBlock(kind: .colorBlock, rect: rect)
+        block.color = strokeColor
+        var newBlocks = document.blocks
+        newBlocks.append(block)
+        document.commit(newBlocks)
     }
 
     func tap(at point: CGPoint) {
@@ -157,20 +248,17 @@ final class EditorViewModel: ObservableObject {
         )
     }
 
-    // MARK: - 自动打码（M3 检测引擎）
+    // MARK: - 检测（M3/M4）
 
     /// 检测人脸/条码/电话/邮箱/证件号/车牌/卡号/姓名并直接打码。
     /// 预算：OCR 在 ≤2048px 降采样图上跑，归一化坐标保证全分辨率导出一致。
+    /// 结果缓存在 cachedAnalysis，长按挑词与 wand 复用，不重复跑 OCR。
     func runAutoRedact() async {
         guard !detecting else { return }
         detecting = true
         defer { detecting = false }
 
-        let base = ImageCoder.downscaled(document.source, maxDimension: 2048)
-        guard let cgImage = base.cgImage else { return }
-        let analysis = await Task.detached(priority: .userInitiated) { () -> VisionAnalysis in
-            VisionAnalyzer.analyze(cgImage: cgImage)
-        }.value
+        let analysis = await analysisIfNeeded()
 
         let newBlocks = DetectionService.autoRedactBlocks(
             from: analysis.sensitive,
@@ -178,6 +266,27 @@ final class EditorViewModel: ObservableObject {
         )
         guard !newBlocks.isEmpty else { return }
         document.commit(document.blocks + newBlocks)
+    }
+
+    /// UI 打开时预热分析缓存（供长按挑词），不做任何打码
+    func analyzeIfNeededForUI() async {
+        _ = await analysisIfNeeded()
+    }
+
+    /// 首次调用时跑一次完整分析并缓存；词级框同步到 textWords 供长按挑词
+    private func analysisIfNeeded() async -> VisionAnalysis {        if let cached = cachedAnalysis { return cached }
+        let base = ImageCoder.downscaled(document.source, maxDimension: 2048)
+        guard let cgImage = base.cgImage else {
+            let empty = VisionAnalysis.empty
+            cachedAnalysis = empty
+            return empty
+        }
+        let analysis = await Task.detached(priority: .userInitiated) { () -> VisionAnalysis in
+            VisionAnalyzer.analyze(cgImage: cgImage)
+        }.value
+        cachedAnalysis = analysis
+        textWords = analysis.textWords
+        return analysis
     }
 
     // MARK: - 历史与选中块

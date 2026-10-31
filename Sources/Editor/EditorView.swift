@@ -26,6 +26,8 @@ struct EditorView: View {
             viewModel.renderPreview()
         }
         .task {
+            // 长按挑词需要词级框：打开时跑一次检测（有缓存，wand 不会重复跑 OCR）
+            await viewModel.analyzeIfNeededForUI()
             if autoMaskOnOpen {
                 await viewModel.runAutoRedact()
             }
@@ -99,6 +101,7 @@ struct EditorView: View {
                         .frame(width: fit.width, height: fit.height)
                     dragPreview(in: fit)
                     selectionBorder(in: fit)
+                    brushPreview(in: fit)
                 } else {
                     ProgressView()
                 }
@@ -106,6 +109,7 @@ struct EditorView: View {
                     zoomProvider: { viewModel.zoom },
                     onTap: { viewModel.tap(at: $0) },
                     onTwoFingerTap: { viewModel.resetZoom() },
+                    onLongPress: { viewModel.longPress(at: $0) },
                     onDrawChanged: { viewModel.drawChanged(at: $0) },
                     onDrawEnded: { viewModel.drawEnded(at: $0) },
                     onDrawCancelled: { viewModel.drawCancelled() },
@@ -181,8 +185,7 @@ struct EditorView: View {
 
     /// 选中块的描边
     @ViewBuilder
-    private func selectionBorder(in fit: CGSize) -> some View {
-        if let block = viewModel.selectedBlock {
+    private func selectionBorder(in fit: CGSize) -> some View {        if let block = viewModel.selectedBlock {
             let frame = CGRect(
                 x: block.rect.minX * fit.width,
                 y: block.rect.minY * fit.height,
@@ -193,6 +196,28 @@ struct EditorView: View {
                 .strokeBorder(Color.accentColor, lineWidth: 2)
                 .frame(width: frame.width, height: frame.height)
                 .offset(x: frame.midX - fit.width / 2, y: frame.midY - fit.height / 2)
+        }
+    }
+
+    /// 刷子正在画时的笔迹预览（圆点连线）
+    @ViewBuilder
+    private func brushPreview(in fit: CGSize) -> some View {
+        if viewModel.activeTool == .brush, viewModel.strokePoints.count > 1 {
+            let points = viewModel.strokePoints.map { CGPoint(x: $0.x * fit.width, y: $0.y * fit.height) }
+            Path { path in
+                path.move(to: points[0])
+                for point in points.dropFirst() {
+                    path.addLine(to: point)
+                }
+            }
+            .stroke(
+                viewModel.strokeColor.color.opacity(viewModel.opacity),
+                style: StrokeStyle(
+                    lineWidth: max(viewModel.pixelSize * fit.width, 4),
+                    lineCap: .round,
+                    lineJoin: .round
+                )
+            )
         }
     }
 }

@@ -10,7 +10,7 @@
 | M1 | 工程骨架、文档模型（撤销/重做）、四种导入入口（相册/文件/剪贴板/示例图） | ✅ |
 | M2 | 编辑画布（缩放/平移/框选）、色块·马赛克·模糊·马克笔、参数面板、选中/删除、导出（去 EXIF） | ✅ |
 | M3 | 检测引擎：Vision OCR/二维码/人脸 + NSDataDetector + NL 姓名，自动打码 | ✅ |
-| M4 | 长按挑词、隐藏文字、表情遮挡、装饰工具、水印工具 | ⏳ |
+| M4 | 长按挑词、隐藏文字、表情遮挡、装饰工具（城市灯光/墨迹/噪点/彩虹条/彩虹格）、水印工具、刷子 | ✅ |
 | M5 | 导出完整化（格式/原尺寸/分享并删除原图） | 🚧 基础版已含 |
 | M6 | 照片编辑扩展 + 分享面板扩展 | ⏳ |
 | M7 | 设置页 / onboarding / Spotlight / 多语言 | ⏳ |
@@ -34,7 +34,7 @@ open Redacto.xcodeproj
 Sources/
   App/         RedactoApp · RootView（导入入口）
   Model/       MaskBlock（块+参数） · RedactDocument（撤销/重做）
-  Rendering/   BlockRenderer —— CoreImage 管线，预览与导出共用
+  Rendering/   BlockRenderer（CoreImage 管线+TextTiler 平铺） —— 预览与导出共用
   Detection/   VisionAnalyzer（单通道 OCR/条码/人脸） · PatternDetector（电话/邮箱/证件号/车牌/卡号/姓名） · DetectionService（合并+自动打码）
   Editor/      CanvasGestureView（UIKit 手势宿主） · EditorViewModel · EditorView · ToolPanel
   Export/      ExportView + EXIF 剥离
@@ -45,8 +45,8 @@ Sources/
 `BlockRenderer` 内部翻转到 CoreImage 的左下原点。块内所有尺寸参数（马赛克大小、模糊半径）
 按「图像宽度的比例」存储，因此预览（≤1600px 降采样）与全分辨率导出结果一致。
 
-**手势**：单指拖拽 = 框选打码；双指捏合 = 缩放；双指拖动 = 平移（仅放大后）；
-双指轻点 = 复位视图；单击 = 选中/取消选中遮盖块。
+**手势**：单指拖拽 = 框选打码（刷子工具=自由涂抹）；双指捏合 = 缩放；双指拖动 = 平移（仅放大后）；
+双指轻点 = 复位视图；单击 = 选中/取消选中遮盖块；长按 = 直接打码命中的检测词。
 
 ## 隐私承诺（与实现一致）
 

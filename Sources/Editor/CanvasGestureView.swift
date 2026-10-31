@@ -15,6 +15,7 @@ struct CanvasGestureView: UIViewRepresentable {
     var zoomProvider: () -> CanvasZoom
     var onTap: (CGPoint) -> Void
     var onTwoFingerTap: () -> Void
+    var onLongPress: (CGPoint) -> Void
     var onDrawChanged: (CGPoint) -> Void
     var onDrawEnded: (CGPoint) -> Void
     var onDrawCancelled: () -> Void
@@ -37,6 +38,11 @@ struct CanvasGestureView: UIViewRepresentable {
         )
         twoFingerTap.numberOfTouchesRequired = 2
 
+        let longPress = UILongPressGestureRecognizer(
+            target: context.coordinator,
+            action: #selector(Coordinator.handleLongPress(_:))
+        )
+
         let draw = UIPanGestureRecognizer(
             target: context.coordinator,
             action: #selector(Coordinator.handleDraw(_:))
@@ -57,7 +63,7 @@ struct CanvasGestureView: UIViewRepresentable {
         // 纯双指拖动等捏合失败后再生效，避免缩放+平移同时叠加
         twoFingerPan.require(toFail: pinch)
 
-        for recognizer in [tap, twoFingerTap, draw, pinch, twoFingerPan] {
+        for recognizer in [tap, twoFingerTap, longPress, draw, pinch, twoFingerPan] {
             view.addGestureRecognizer(recognizer)
         }
         return view
@@ -96,6 +102,11 @@ struct CanvasGestureView: UIViewRepresentable {
         @objc func handleTwoFingerTap(_ gesture: UITapGestureRecognizer) {
             guard gesture.state == .ended else { return }
             parent.onTwoFingerTap()
+        }
+
+        @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+            guard gesture.state == .began else { return }
+            parent.onLongPress(normalizedPoint(gesture))
         }
 
         @objc func handleDraw(_ gesture: UIPanGestureRecognizer) {
