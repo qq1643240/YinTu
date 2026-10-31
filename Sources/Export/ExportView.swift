@@ -45,7 +45,9 @@ struct ExportView: View {
                         .padding(.vertical, 60)
                 }
                 Picker("格式", selection: $format) {
-                    ForEach(ExportFormat.allCases) { $0 }
+                    ForEach(ExportFormat.allCases) { item in
+                        Text(item.rawValue).tag(item)
+                    }
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
