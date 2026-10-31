@@ -18,12 +18,17 @@ struct EditorView: View {
         if chromeless {
             editorBody
         } else {
+#if YINTU_EXTENSION
+            // 扩展 target 不含 Export/，导出入口只存在于主 App
+            editorBody
+#else
             editorBody
                 .sheet(isPresented: $showExport) {
                     ExportView(document: document) {
                         dismiss()
                     }
                 }
+#endif
         }
     }
 
