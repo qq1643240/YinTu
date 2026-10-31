@@ -1,0 +1,40 @@
+/* RootView */
+"root.subtitle" = "图片隐私打码 · 全程离线";
+"root.badge.offline" = "离线";
+"root.badge.no_sdk" = "无 SDK";
+"root.badge.exif" = "去 EXIF";
+"root.pick.photos" = "从相册选择";
+"root.pick.files" = "从文件导入";
+"root.pick.clipboard" = "从剪贴板粘贴";
+"root.pick.sample" = "示例图片";
+"root.error.pending_missing" = "找不到最新的照片";
+"root.error.pending_read" = "无法读取最新的照片";
+
+/* SettingsView */
+"settings.title" = "设置";
+"common.done" = "完成";
+"settings.redact.section" = "打码";
+"settings.auto_mask" = "打开图片时自动检测并打码";
+"settings.auto_mask.footer" = "检测在设备端完成，识别人脸、二维码、电话、邮箱、证件号、车牌、银行卡号与姓名。";
+"settings.ocr.section" = "OCR 语言优先级";
+"settings.ocr.zh" = "中文";
+"settings.ocr.en" = "English";
+"settings.ocr.footer" = "文字识别使用的语言，两者都关闭时自动回退为双语。";
+"settings.privacy.section" = "隐私";
+"settings.privacy.offline" = "全程离线，无任何网络请求";
+"settings.privacy.no_sdk" = "无第三方 SDK，无统计埋点";
+"settings.privacy.exif" = "导出自动剥离 EXIF（含 GPS 位置）";
+"settings.about.section" = "关于";
+"settings.about.version" = "版本";
+
+/* OnboardingView */
+"onboard.import.title" = "导入图片";
+"onboard.import.text" = "从相册、文件、剪贴板导入，或直接用示例图试一试。";
+"onboard.detect.title" = "智能检测";
+"onboard.detect.text" = "人脸、二维码、电话、邮箱、证件号、车牌、卡号、姓名，一键自动打码。";
+"onboard.edit.title" = "框选涂抹";
+"onboard.edit.text" = "拖拽框选、长按挑词、刷子涂抹；马赛克、模糊、色块等 13 种工具随心用。";
+"onboard.privacy.title" = "隐私无忧";
+"onboard.privacy.text" = "全程离线处理，照片绝不上传；导出自动剥离 EXIF 位置信息。";
+"onboard.next" = "下一页";
+"onboard.start" = "开始使用";

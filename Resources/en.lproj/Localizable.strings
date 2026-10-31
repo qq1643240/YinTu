@@ -1,0 +1,40 @@
+/* RootView */
+"root.subtitle" = "Image privacy redaction · Fully offline";
+"root.badge.offline" = "Offline";
+"root.badge.no_sdk" = "No SDK";
+"root.badge.exif" = "Strip EXIF";
+"root.pick.photos" = "Choose from Photos";
+"root.pick.files" = "Import from Files";
+"root.pick.clipboard" = "Paste from Clipboard";
+"root.pick.sample" = "Sample Image";
+"root.error.pending_missing" = "Couldn't find the latest photo";
+"root.error.pending_read" = "Couldn't read the latest photo";
+
+/* SettingsView */
+"settings.title" = "Settings";
+"common.done" = "Done";
+"settings.redact.section" = "Redaction";
+"settings.auto_mask" = "Auto-detect & redact on open";
+"settings.auto_mask.footer" = "Detection runs on-device for faces, QR/barcodes, phone numbers, emails, ID numbers, license plates, bank cards and names.";
+"settings.ocr.section" = "OCR Language Priority";
+"settings.ocr.zh" = "Chinese";
+"settings.ocr.en" = "English";
+"settings.ocr.footer" = "Languages used for text recognition; falls back to both when all are off.";
+"settings.privacy.section" = "Privacy";
+"settings.privacy.offline" = "Fully offline, no network requests";
+"settings.privacy.no_sdk" = "No third-party SDKs, no analytics";
+"settings.privacy.exif" = "EXIF (incl. GPS) stripped on export";
+"settings.about.section" = "About";
+"settings.about.version" = "Version";
+
+/* OnboardingView */
+"onboard.import.title" = "Import an image";
+"onboard.import.text" = "Bring photos in from your library, files or clipboard — or try the sample.";
+"onboard.detect.title" = "Smart detection";
+"onboard.detect.text" = "Faces, QR codes, phones, emails, ID numbers, plates, bank cards and names — one-tap auto redaction.";
+"onboard.edit.title" = "Draw & brush";
+"onboard.edit.text" = "Drag boxes, tap words with the wand, paint with the brush; 13 tools including mosaic, blur and color blocks.";
+"onboard.privacy.title" = "Privacy first";
+"onboard.privacy.text" = "Everything is processed on-device. Photos never leave your phone; EXIF location is stripped on export.";
+"onboard.next" = "Next";
+"onboard.start" = "Get Started";

@@ -16,7 +16,7 @@ enum VisionAnalyzer {
         let textRequest = VNRecognizeTextRequest()
         textRequest.recognitionLevel = .accurate
         textRequest.usesLanguageCorrection = true
-        textRequest.recognitionLanguages = ["zh-Hans", "en-US"]
+        textRequest.recognitionLanguages = DetectionLanguageStore.languages
 
         let barcodeRequest = VNDetectBarcodesRequest()
         let faceRequest = VNDetectFaceRectanglesRequest()

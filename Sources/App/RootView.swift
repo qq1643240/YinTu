@@ -1,3 +1,4 @@
+import Photos
 import PhotosUI
 import SwiftUI
 import UIKit
@@ -8,6 +9,9 @@ struct RootView: View {
     @State private var showFileImporter = false
     @State private var document: RedactDocument?
     @State private var errorMessage: String?
+    @State private var showSettings = false
+    @State private var showOnboarding = !UserDefaults.standard.bool(forKey: "onboarding_done")
+    @State private var loadingPendingPhoto = false
 
     var body: some View {
         NavigationStack {
@@ -18,34 +22,34 @@ struct RootView: View {
                     .foregroundStyle(.tint)
                 VStack(spacing: 6) {
                     Text("Redacto").font(.system(size: 38, weight: .bold))
-                    Text("图片隐私打码 · 全程离线")
+                    Text(L("root.subtitle"))
                         .foregroundStyle(.secondary)
                 }
                 HStack(spacing: 14) {
-                    Label("离线", systemImage: "wifi.slash")
-                    Label("无 SDK", systemImage: "checkmark.shield")
-                    Label("去 EXIF", systemImage: "location.slash")
+                    Label(L("root.badge.offline"), systemImage: "wifi.slash")
+                    Label(L("root.badge.no_sdk"), systemImage: "checkmark.shield")
+                    Label(L("root.badge.exif"), systemImage: "location.slash")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 Spacer()
                 VStack(spacing: 0) {
                     PhotosPicker(selection: $pickerItem, matching: .images) {
-                        rowLabel("photo.on.rectangle", "从相册选择")
+                        rowLabel("photo.on.rectangle", L("root.pick.photos"))
                     }
                     Divider().padding(.leading, 52)
                     Button { showFileImporter = true } label: {
-                        rowLabel("folder", "从文件导入")
+                        rowLabel("folder", L("root.pick.files"))
                     }
                     Divider().padding(.leading, 52)
                     Button { pasteFromClipboard() } label: {
-                        rowLabel("doc.on.clipboard", "从剪贴板粘贴")
+                        rowLabel("doc.on.clipboard", L("root.pick.clipboard"))
                     }
                     Divider().padding(.leading, 52)
                     Button {
                         document = RedactDocument(image: SampleImageGenerator.make())
                     } label: {
-                        rowLabel("sparkles", "示例图片")
+                        rowLabel("sparkles", L("root.pick.sample"))
                     }
                 }
                 .buttonStyle(.plain)
@@ -53,6 +57,17 @@ struct RootView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .padding(.horizontal, 24)
                 .padding(.bottom, 44)
+            }
+            .overlay(alignment: .topTrailing) {
+                Button {
+                    showSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 17, weight: .medium))
+                        .padding(10)
+                        .background(.thinMaterial, in: Circle())
+                }
+                .padding(.trailing, 20)
             }
             .toolbar(.hidden, for: .navigationBar)
             .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.image]) { result in
@@ -62,6 +77,18 @@ struct RootView: View {
                 guard let item else { return }
                 pickerItem = nil
                 Task { await loadPickerItem(item) }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                checkPendingIntentPhoto()
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView()
+            }
+            .fullScreenCover(isPresented: $showOnboarding) {
+                OnboardingView {
+                    UserDefaults.standard.set(true, forKey: "onboarding_done")
+                    showOnboarding = false
+                }
             }
             .fullScreenCover(item: $document) { doc in
                 EditorView(document: doc)
@@ -127,5 +154,37 @@ struct RootView: View {
             return
         }
         document = RedactDocument(image: image)
+    }
+
+    // MARK: - Spotlight 快捷指令（"打码最新的图片"）
+
+    private func checkPendingIntentPhoto() {
+        guard document == nil, !loadingPendingPhoto else { return }
+        guard UserDefaults.standard.object(forKey: RedactLatestPhotoIntent.pendingAssetKey) != nil else { return }
+        loadingPendingPhoto = true
+        Task { await loadPendingIntentPhoto() }
+    }
+
+    private func loadPendingIntentPhoto() async {
+        defer { loadingPendingPhoto = false }
+        guard let assetID = UserDefaults.standard.string(forKey: RedactLatestPhotoIntent.pendingAssetKey) else { return }
+        UserDefaults.standard.removeObject(forKey: RedactLatestPhotoIntent.pendingAssetKey)
+        guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [assetID], options: nil).firstObject else {
+            errorMessage = L("root.error.pending_missing")
+            return
+        }
+        let data: Data? = await withCheckedContinuation { continuation in
+            let options = PHImageRequestOptions()
+            options.isSynchronous = true
+            options.isNetworkAccessAllowed = false
+            PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, _, _, _ in
+                continuation.resume(returning: data)
+            }
+        }
+        guard let data, let image = UIImage(data: data) else {
+            errorMessage = L("root.error.pending_read")
+            return
+        }
+        document = RedactDocument(image: image, libraryAssetID: assetID)
     }
 }

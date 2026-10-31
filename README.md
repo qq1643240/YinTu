@@ -13,7 +13,7 @@
 | M4 | 长按挑词、隐藏文字、表情遮挡、装饰工具（城市灯光/墨迹/噪点/彩虹条/彩虹格）、水印工具、刷子 | ✅ |
 | M5 | 导出完整化（JPEG/PNG + 质量滑杆、全分辨率渲染、分享并删除原图） | ✅ |
 | M6 | 照片编辑扩展（Photos 内直接打码，块随 adjustmentData 往返）+ 分享面板扩展（存入相册） | ✅ |
-| M7 | 设置页 / onboarding / Spotlight / 多语言 | ⏳ |
+| M7 | 设置页 / 首启引导 / Spotlight 快捷指令 / 双语（en+zh-Hans，shell 层） | ✅ |
 
 ## 在 Mac 上构建
 
@@ -32,13 +32,15 @@ open Redacto.xcodeproj
 
 ```
 Sources/
-  App/         RedactoApp · RootView（导入入口）
+  App/         RedactoApp · RootView（导入入口） · Intents（"打码最新的图片"快捷指令） · SettingsView · OnboardingView
   Model/       MaskBlock（块+参数） · RedactDocument（撤销/重做） · BlockArchive（扩展往返编码）
   Rendering/   BlockRenderer（CoreImage 管线+TextTiler 平铺） —— 预览与导出共用
   Detection/   VisionAnalyzer（单通道 OCR/条码/人脸） · PatternDetector（电话/邮箱/证件号/车牌/卡号/姓名） · DetectionService（合并+自动打码）
   Editor/      CanvasGestureView（UIKit 手势宿主） · EditorViewModel · EditorView（chromeless 可嵌入扩展） · ToolPanel
   Export/      ExportView + EXIF 剥离
-  Support/     ImageCoder · SampleImageGenerator
+  Support/     ImageCoder · SampleImageGenerator · DetectionLanguageStore · Localization(L)
+Resources/
+  Assets.xcassets · en.lproj + zh-Hans.lproj（Localizable.strings：主界面/设置/引导；编辑器内文案暂为中文，键已铺好可扩展）
 Extensions/
   PhotoEditor/ Photos 编辑扩展：主 App 编辑器整体嵌入，块列表经 PHAdjustmentData 往返
   ActionShare/ 分享面板扩展：把分享来的图片存入相册
