@@ -80,6 +80,7 @@ struct CanvasGestureView: UIViewRepresentable {
     final class Coordinator: NSObject {
         var parent: CanvasGestureView
         var pinchStart = CanvasZoom.identity
+        var pinchStartLocation = CGPoint.zero
         var panStart = CanvasZoom.identity
 
         init(_ parent: CanvasGestureView) {
@@ -127,8 +128,10 @@ struct CanvasGestureView: UIViewRepresentable {
             switch gesture.state {
             case .began:
                 pinchStart = parent.zoomProvider()
+                pinchStartLocation = gesture.location(in: gesture.view)
             case .changed:
-                let translation = gesture.translation(in: gesture.view)
+                let loc = gesture.location(in: gesture.view)
+                let translation = CGPoint(x: loc.x - pinchStartLocation.x, y: loc.y - pinchStartLocation.y)
                 let centroid = gesture.location(in: gesture.view)
                 parent.onPinch(pinchStart, gesture.scale, translation, centroid)
             case .ended:
