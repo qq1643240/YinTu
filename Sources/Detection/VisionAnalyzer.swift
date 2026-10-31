@@ -65,7 +65,8 @@ enum VisionAnalyzer {
                 in: NSRange(location: 0, length: text.length),
                 options: [.byWords, .substringNotRequired]
             ) { _, range, _, _ in
-                guard let box = try? candidate.boundingBox(for: range),
+                guard let swiftRange = Range(range, in: candidate.string),
+                      let box = try? candidate.boundingBox(for: swiftRange),
                       let rect = regionFromVisionBox(box) else { return }
                 regions.append(DetectedRegion(rect: rect, kind: .text, label: "词"))
             }
