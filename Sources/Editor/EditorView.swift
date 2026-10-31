@@ -15,6 +15,19 @@ struct EditorView: View {
     }
 
     var body: some View {
+        if chromeless {
+            editorBody
+        } else {
+            editorBody
+                .sheet(isPresented: $showExport) {
+                    ExportView(document: document) {
+                        dismiss()
+                    }
+                }
+        }
+    }
+
+    private var editorBody: some View {
         VStack(spacing: 0) {
             if !chromeless {
                 topBar
@@ -24,12 +37,7 @@ struct EditorView: View {
         }
         .background(Color(.systemBackground))
         .statusBarHidden()
-        .sheet(isPresented: $showExport) {
-            ExportView(document: document) {
-                dismiss()
-            }
-        }
-        .onChange(of: document.blocks) { _ in
+        .onChange(of: document.blocks) { _, _ in
             viewModel.renderPreview()
         }
         .task {
@@ -159,7 +167,7 @@ struct EditorView: View {
                 }
             }
             .onAppear { viewModel.fittedSize = fit }
-            .onChange(of: geometry.size) { _ in
+            .onChange(of: geometry.size) { _, _ in
                 viewModel.fittedSize = fittedSize(in: geometry.size)
             }
         }
@@ -218,7 +226,7 @@ struct EditorView: View {
                 }
             }
             .stroke(
-                viewModel.strokeColor.color.opacity(viewModel.opacity),
+                viewModel.strokeColor.swiftUIColor.opacity(viewModel.opacity),
                 style: StrokeStyle(
                     lineWidth: max(viewModel.pixelSize * fit.width, 4),
                     lineCap: .round,
