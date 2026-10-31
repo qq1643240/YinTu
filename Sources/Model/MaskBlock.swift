@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 
 /// 遮盖块。
 ///
