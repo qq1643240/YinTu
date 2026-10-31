@@ -10,7 +10,7 @@ extension RGBA {
         var green: CGFloat = 0
         var blue: CGFloat = 0
         var alpha: CGFloat = 0
-        UIColor(color).getRed(&red, &green, &blue, &alpha)
+        UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
         self.init(red: Double(red), green: Double(green), blue: Double(blue), alpha: Double(alpha))
     }
 }
