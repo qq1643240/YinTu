@@ -130,14 +130,29 @@ enum BlockRenderer {
     }
 
     /// 全幅黑底 + 白色圆角矩形（圆角之外的区域透出背景）
+    /// 用 UIKit 画布绘制：CIRoundedRectangleGenerator 的类型化属性在 iOS 26 SDK 里名称不稳。
     private static func maskImage(rect: CGRect, cornerRadius: Double, extent: CGRect) -> CIImage {
         let black = CIImage(color: CIColor.black).cropped(to: extent)
-        let generator = CIFilter.roundedRectangleGenerator()
-        generator.rectangle = CIVector(cgRect: rect)
-        generator.cornerRadius = Float(min(rect.width, rect.height) * 2 * cornerRadius)
-        generator.color = CIColor.white
-        guard let white = generator.outputImage else { return black }
-        return white.composited(over: black)
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
+        let canvas = CGSize(width: ceil(extent.width), height: ceil(extent.height))
+        // UIKit 画布 y 向下、CI 空间 y 向上：绘制前翻转纵向位置
+        let flipped = CGRect(
+            x: rect.minX,
+            y: extent.height - rect.maxY,
+            width: rect.width,
+            height: rect.height
+        )
+        let image = UIGraphicsImageRenderer(size: canvas, format: format).image { ctx in
+            ctx.cgContext.setFillColor(UIColor.white.cgColor)
+            UIBezierPath(
+                roundedRect: flipped,
+                cornerRadius: CGFloat(min(flipped.width, flipped.height) * 2 * cornerRadius)
+            ).fill()
+        }
+        guard let cg = image.cgImage else { return black }
+        return CIImage(cgImage: cg).composited(over: black)
     }
 
     // MARK: - 彩虹渐变（256×1 横向七色，按需缩放）
@@ -165,7 +180,7 @@ enum BlockRenderer {
                 gradient,
                 start: CGPoint(x: 0, y: 0),
                 end: CGPoint(x: 256, y: 0),
-                options: [.extendsStart, .extendsEnd]
+                options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
             )
         }
         guard let cg = image.cgImage else { return nil }
@@ -225,10 +240,9 @@ enum TextTiler {
             .translatedBy(x: -center.x, y: -center.y)
         tiled = tiled.transformed(by: rotation).cropped(to: extent)
 
-        let matrix = CIFilter.colorMatrix()
-        matrix.inputImage = tiled
-        matrix.inputAVector = CIVector(x: 0, y: 0, z: 0, w: Float(opacity))
-        return matrix.outputImage
+        return tiled.applyingFilter("CIColorMatrix", parameters: [
+            "inputAVector": CIVector(x: 0, y: 0, z: 0, w: CGFloat(opacity)),
+        ])
     }
 
     static func emojiTile(emoji: String, blockRect: CGRect, extent: CGRect) -> CIImage? {
