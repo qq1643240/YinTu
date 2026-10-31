@@ -33,4 +33,5 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         NSPhotoLibraryAddUsageDescription: 保存打码后的图片到相册时需要此权限。
+        NSPhotoLibraryUsageDescription: 仅在您选择「分享并删除原图」时用于删除所选照片，不会上传任何内容。
         ITSAppUsesNonExemptEncryption: false

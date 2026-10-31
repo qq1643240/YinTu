@@ -106,7 +106,8 @@ struct RootView: View {
             errorMessage = "无法读取所选照片"
             return
         }
-        document = RedactDocument(image: image)
+        // itemIdentifier 即 PHAsset localIdentifier，供"分享并删除原图"使用
+        document = RedactDocument(image: image, libraryAssetID: item.itemIdentifier)
     }
 
     private func handleFileImport(_ result: Result<URL, Error>) {

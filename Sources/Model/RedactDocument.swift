@@ -8,6 +8,8 @@ final class RedactDocument: ObservableObject, Identifiable {
     let source: UIImage
     /// 来源文件；剪贴板/示例图为 nil
     let fileURL: URL?
+    /// 相册资产的 localIdentifier（从相册选择时记录），用于"分享并删除原图"
+    let libraryAssetID: String?
 
     @Published private(set) var blocks: [MaskBlock] = []
     @Published private(set) var canUndo = false
@@ -16,9 +18,10 @@ final class RedactDocument: ObservableObject, Identifiable {
     private var history: [[MaskBlock]] = [[]]
     private var historyIndex = 0
 
-    init(image: UIImage, fileURL: URL? = nil) {
+    init(image: UIImage, fileURL: URL? = nil, libraryAssetID: String? = nil) {
         self.source = ImageCoder.normalized(image)
         self.fileURL = fileURL
+        self.libraryAssetID = libraryAssetID
     }
 
     var imageSize: CGSize { source.size }

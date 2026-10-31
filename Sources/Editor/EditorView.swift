@@ -20,7 +20,9 @@ struct EditorView: View {
         .background(Color(.systemBackground))
         .statusBarHidden()
         .sheet(isPresented: $showExport) {
-            ExportView(document: document)
+            ExportView(document: document) {
+                dismiss()
+            }
         }
         .onChange(of: document.blocks) { _ in
             viewModel.renderPreview()
