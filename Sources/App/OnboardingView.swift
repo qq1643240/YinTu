@@ -5,24 +5,24 @@ struct OnboardingView: View {
     var onFinish: () -> Void
     @State private var page = 0
 
-    private struct Step {
+    private struct Step: Identifiable {
+        let id: Int
         let icon: String
         let titleKey: String
         let textKey: String
     }
 
     private let steps: [Step] = [
-        Step(icon: "photo.on.rectangle.angled", titleKey: "onboard.import.title", textKey: "onboard.import.text"),
-        Step(icon: "wand.and.stars", titleKey: "onboard.detect.title", textKey: "onboard.detect.text"),
-        Step(icon: "hand.draw", titleKey: "onboard.edit.title", textKey: "onboard.edit.text"),
-        Step(icon: "lock.shield", titleKey: "onboard.privacy.title", textKey: "onboard.privacy.text"),
+        Step(id: 0, icon: "photo.on.rectangle.angled", titleKey: "onboard.import.title", textKey: "onboard.import.text"),
+        Step(id: 1, icon: "wand.and.stars", titleKey: "onboard.detect.title", textKey: "onboard.detect.text"),
+        Step(id: 2, icon: "hand.draw", titleKey: "onboard.edit.title", textKey: "onboard.edit.text"),
+        Step(id: 3, icon: "lock.shield", titleKey: "onboard.privacy.title", textKey: "onboard.privacy.text"),
     ]
 
     var body: some View {
         VStack(spacing: 0) {
             TabView(selection: $page) {
-                ForEach(0..<steps.count, id: \.self) { index in
-                    let step = steps[index]
+                ForEach(steps) { step in
                     VStack(spacing: 24) {
                         Image(systemName: step.icon)
                             .font(.system(size: 72, weight: .light))
@@ -36,7 +36,7 @@ struct OnboardingView: View {
                             .padding(.horizontal, 32)
                     }
                     .padding(.bottom, 48)
-                    .tag(index)
+                    .tag(step.id)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
