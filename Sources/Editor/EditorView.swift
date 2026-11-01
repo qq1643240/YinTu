@@ -117,7 +117,7 @@ struct EditorView: View {
                 if let preview = viewModel.preview {
                     Image(uiImage: preview)
                         .resizable()
-                        .interpolation(.none)
+                        .interpolation(.medium)
                         .frame(width: fit.width, height: fit.height)
                     dragPreview(in: fit)
                     selectionBorder(in: fit)
