@@ -13,10 +13,18 @@ struct VisionAnalysis {
 
 enum VisionAnalyzer {
     static func analyze(cgImage: CGImage) -> VisionAnalysis {
+        let (first, ok) = perform(cgImage: cgImage, languages: DetectionLanguageStore.languages)
+        if ok { return first }
+        // 设置里的语言组合可能导致请求失败：去掉语言限制重试一次
+        let (retry, _) = perform(cgImage: cgImage, languages: nil)
+        return retry
+    }
+
+    private static func perform(cgImage: CGImage, languages: [String]?) -> (VisionAnalysis, Bool) {
         let textRequest = VNRecognizeTextRequest()
         textRequest.recognitionLevel = .accurate
         textRequest.usesLanguageCorrection = true
-        textRequest.recognitionLanguages = DetectionLanguageStore.languages
+        textRequest.recognitionLanguages = languages
 
         let barcodeRequest = VNDetectBarcodesRequest()
         let faceRequest = VNDetectFaceRectanglesRequest()
@@ -25,8 +33,8 @@ enum VisionAnalyzer {
         do {
             try handler.perform([textRequest, barcodeRequest, faceRequest])
         } catch {
-            // Vision 整体失败：无检测结果，用户仍可手动框选
-            return .empty
+            // 通道失败由 analyze 重试；仍失败则无检测结果，用户可手动框选
+            return (VisionAnalysis.empty, false)
         }
 
         var analysis = VisionAnalysis()
@@ -52,7 +60,7 @@ enum VisionAnalyzer {
             analysis.sensitive.append(DetectedRegion(rect: rect, kind: .face, label: "人脸"))
         }
 
-        return analysis
+        return (analysis, true)
     }
 
     /// 利用 VNRecognizedText.boundingBox(for:) 拿到每个词的精确框
