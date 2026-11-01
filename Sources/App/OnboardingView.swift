@@ -26,7 +26,7 @@ struct OnboardingView: View {
                     VStack(spacing: 24) {
                         Image(systemName: step.icon)
                             .font(.system(size: 72, weight: .light))
-                            .foregroundStyle(.accent)
+                            .foregroundStyle(Color.accentColor)
                         Text(L(step.titleKey))
                             .font(.title2.bold())
                         Text(L(step.textKey))
