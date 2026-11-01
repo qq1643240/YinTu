@@ -133,19 +133,30 @@ struct RootView: View {
             errorMessage = "无法读取所选照片"
             return
         }
-        // itemIdentifier 即 PHAsset localIdentifier，供"分享并删除原图"使用
-        document = RedactDocument(image: image, libraryAssetID: item.itemIdentifier)
+        // 方向烘焙是 12MP 级全图重绘，放后台；itemIdentifier 即 PHAsset localIdentifier，供"分享并删除原图"使用
+        let normalized = await Task.detached(priority: .userInitiated) {
+            ImageCoder.normalized(image)
+        }.value
+        document = RedactDocument(image: normalized, libraryAssetID: item.itemIdentifier)
     }
 
     private func handleFileImport(_ result: Result<URL, Error>) {
         guard case .success(let url) = result else { return }
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        guard let image = UIImage(contentsOfFile: url.path) else {
-            errorMessage = "无法读取该图片文件"
-            return
+        Task {
+            let scoped = url.startAccessingSecurityScopedResource()
+            let image = await Task.detached(priority: .userInitiated) {
+                UIImage(contentsOfFile: url.path)
+            }.value
+            if scoped { url.stopAccessingSecurityScopedResource() }
+            guard let image else {
+                errorMessage = "无法读取该图片文件"
+                return
+            }
+            let normalized = await Task.detached(priority: .userInitiated) {
+                ImageCoder.normalized(image)
+            }.value
+            document = RedactDocument(image: normalized, fileURL: url)
         }
-        document = RedactDocument(image: image, fileURL: url)
     }
 
     private func pasteFromClipboard() {
@@ -153,7 +164,12 @@ struct RootView: View {
             errorMessage = "剪贴板里没有图片"
             return
         }
-        document = RedactDocument(image: image)
+        Task {
+            let normalized = await Task.detached(priority: .userInitiated) {
+                ImageCoder.normalized(image)
+            }.value
+            document = RedactDocument(image: normalized)
+        }
     }
 
     // MARK: - Spotlight 快捷指令（"打码最新的图片"）
@@ -185,6 +201,9 @@ struct RootView: View {
             errorMessage = L("root.error.pending_read")
             return
         }
-        document = RedactDocument(image: image, libraryAssetID: assetID)
+        let normalized = await Task.detached(priority: .userInitiated) {
+            ImageCoder.normalized(image)
+        }.value
+        document = RedactDocument(image: normalized, libraryAssetID: assetID)
     }
 }
