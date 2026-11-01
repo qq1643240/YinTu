@@ -41,6 +41,9 @@ final class EditorViewModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
     private var previewTask: Task<Void, Never>?
+    /// 预览底图缓存：每份文档只降采样一次，渲染与检测共用
+    private var cachedBase: UIImage?
+    private var baseTask: Task<UIImage, Never>?
 
     init(document: RedactDocument) {
         self.document = document
@@ -48,7 +51,8 @@ final class EditorViewModel: ObservableObject {
         document.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
-        renderNow()
+        // 异步渲染首帧；init 里同步做全图重绘会卡住主线程
+        renderPreview()
     }
 
     deinit {
@@ -274,8 +278,9 @@ final class EditorViewModel: ObservableObject {
     }
 
     /// 首次调用时跑一次完整分析并缓存；词级框同步到 textWords 供长按挑词
-    private func analysisIfNeeded() async -> VisionAnalysis {        if let cached = cachedAnalysis { return cached }
-        let base = ImageCoder.downscaled(document.source, maxDimension: 2048)
+    private func analysisIfNeeded() async -> VisionAnalysis {
+        if let cached = cachedAnalysis { return cached }
+        let base = await previewBase()
         guard let cgImage = base.cgImage else {
             let empty = VisionAnalysis.empty
             cachedAnalysis = empty
@@ -332,15 +337,32 @@ final class EditorViewModel: ObservableObject {
         renderInternal()
     }
 
+    /// 预览底图（最长边 1600）：全生命周期只降采样一次，渲染与检测复用。
+    /// 并发调用共享同一个后台任务，避免重复解码。
+    private func previewBase() async -> UIImage {
+        if let cachedBase { return cachedBase }
+        if let baseTask { return await baseTask.value }
+        let source = document.source
+        let task = Task.detached(priority: .userInitiated) {
+            ImageCoder.downscaled(source, maxDimension: 1600)
+        }
+        baseTask = task
+        let image = await task.value
+        cachedBase = image
+        return image
+    }
+
     private func renderInternal() {
-        let base = ImageCoder.downscaled(document.source, maxDimension: 1600)
         let blocks = document.blocks
-        let task = Task.detached(priority: .userInitiated) { [weak self] in
-            let image = BlockRenderer.render(base: base, blocks: blocks)
+        let task = Task { [weak self] in
+            guard let self else { return }
+            let base = await self.previewBase()
+            let image = await Task.detached(priority: .userInitiated) {
+                BlockRenderer.render(base: base, blocks: blocks)
+            }.value
+            // 取消检查要在外层任务上（detached 不继承父任务取消状态）
             guard !Task.isCancelled else { return }
-            await MainActor.run { [weak self] in
-                self?.preview = image
-            }
+            self.preview = image
         }
         previewTask = task
     }
